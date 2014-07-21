@@ -1,14 +1,42 @@
+/*
+ * Copyright (c) 2014, North Carolina State University
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of North Carolina State University nor the names of
+ * its contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+ * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ * PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+ * TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE
+ */
+
 package com.example.containerapp;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
@@ -16,52 +44,35 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.Principal;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
-
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
-
-
-
 import android.net.Uri;
-import android.net.http.SslCertificate;
-import android.net.http.SslCertificate.DName;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.AssetManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.Window;
 import android.webkit.CookieManager;
 import android.webkit.GeolocationPermissions;
 import android.webkit.ValueCallback;
-import android.webkit.WebBackForwardList;
 import android.webkit.WebSettings;
 import android.webkit.WebSettings.PluginState;
 import android.webkit.WebStorage;
@@ -71,7 +82,6 @@ import android.webkit.WebChromeClient;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
-import android.widget.VideoView;
 
 public class ContainerMain extends Activity {
 	private View mCustomView;
@@ -346,8 +356,7 @@ public class ContainerMain extends Activity {
 	//MyWebViewClient: Controls navigation. 
 	private class MyWebViewClient extends WebViewClient {
 	    @Override
-	    public boolean shouldOverrideUrlLoading(WebView view, String url) {
-	    	
+	    public boolean shouldOverrideUrlLoading(WebView view, String url) {	
 	    	//Compare the hostnames of the origURL and the currentURL, to decide whether to 
 	    	//continue in the webview or not	
 	    	//return false to load in WebView; if true, send an intent to the Web browser
@@ -377,8 +386,6 @@ public class ContainerMain extends Activity {
 					e.printStackTrace();
 				}
 	    	}
-	    	Log.d(TAG,"OrigHost="+origURL.getHost());
-	    	Log.d(TAG,"CurrentHost="+currentURL.getHost());
 	    	
 	    	//Comparing Current URL with WhiteList
 	    	//If it exists in the white list, let it load
@@ -460,7 +467,6 @@ public class ContainerMain extends Activity {
 	boolean checkHTTPSConnection(URL currentURL, WebView view)
 	{//returns false on valid certificate verification.
 		boolean retFlag=false;
-		
 		if(currentURL.getProtocol().equals("https"))
 		{
 			try {
@@ -591,67 +597,61 @@ public class ContainerMain extends Activity {
 
 		private X509TrustManager selfTrustManager = null;
 		List<X509Certificate> allIssuers = new ArrayList<X509Certificate>();
+		/**
+		 * Constructor for MyX509TrustManager. 
+		 * 
+		 */
+	    public MyX509TrustManager() throws NoSuchAlgorithmException, KeyStoreException {
+	        super();
+	        TrustManagerFactory selffactory = TrustManagerFactory.getInstance( TrustManagerFactory.getDefaultAlgorithm() );
+	        if(mykey==null)
+	        {	//System.out.println("MYKEY NULL");
+	        	selffactory.init((KeyStore)mykey); // Initialize TMF with self signed cert keystore
+	        }
+	        else
+	        	selffactory.init(mykey); 
+	        TrustManager[] selftm = selffactory.getTrustManagers();
+	       
+	        if ( selftm.length == 0 )
+	        {
+	            throw new NoSuchAlgorithmException( "no trust manager found" );
+	        }
+	        this.selfTrustManager = (X509TrustManager) selftm[0];
+	
+	    }
 
+	    /**
+	     * @see javax.net.ssl.X509TrustManager#checkClientTrusted(X509Certificate[],String authType)
+	     */
+	    public void checkClientTrusted( X509Certificate[] certificates, String authType )
+	        throws CertificateException {
+	    	try{
+	    		selfTrustManager.checkClientTrusted( certificates, authType );	
+	    	}
+	    	catch(CertificateException e)
+	    	{
+	    		Log.d(TAG,"Exception while initializing TrustManager: checkClientTrusted:"+e);
+	    	}
+	        
+	    }	
 
-    /**
-     * Constructor for MyX509TrustManager. 
-     * 
-     */
-    public MyX509TrustManager()
-        throws NoSuchAlgorithmException, KeyStoreException
-    {
-        super();
-        TrustManagerFactory selffactory = TrustManagerFactory.getInstance( TrustManagerFactory.getDefaultAlgorithm() );
-        if(mykey==null)
-        {	//System.out.println("MYKEY NULL");
-        	selffactory.init((KeyStore)mykey); // Initialize TMF with self signed cert keystore
-        }
-        else
-        	selffactory.init(mykey); 
-        TrustManager[] selftm = selffactory.getTrustManagers();
-       
-        if ( selftm.length == 0 )
-        {
-            throw new NoSuchAlgorithmException( "no trust manager found" );
-        }
-        this.selfTrustManager = (X509TrustManager) selftm[0];
+	    /**
+	     * @see javax.net.ssl.X509TrustManager#checkServerTrusted(X509Certificate[],String authType)
+	     */
+	    public void checkServerTrusted( X509Certificate[] certificates, String authType )
+	        throws CertificateException {
+	    		Log.d(TAG,"Inside My Trust Manager.");
+	    		selfTrustManager.checkServerTrusted( certificates, authType );
+	    }
+
+	    /**
+	     * @see javax.net.ssl.X509TrustManager#getAcceptedIssuers()
+	     */
+	    public X509Certificate[] getAcceptedIssuers() {
+	    	return null;
+	    }
 
     }
-
-    /**
-     * @see javax.net.ssl.X509TrustManager#checkClientTrusted(X509Certificate[],String authType)
-     */
-    public void checkClientTrusted( X509Certificate[] certificates, String authType )
-        throws CertificateException
-    {
-    	try{
-    		selfTrustManager.checkClientTrusted( certificates, authType );	
-    	}
-    	catch(CertificateException e)
-    	{
-    		Log.d(TAG,"Exception while initializing TrustManager: checkClientTrusted:"+e);
-    	}
-        
-    }
-
-    /**
-     * @see javax.net.ssl.X509TrustManager#checkServerTrusted(X509Certificate[],String authType)
-     */
-    public void checkServerTrusted( X509Certificate[] certificates, String authType )
-        throws CertificateException
-    {
-    		Log.d(TAG,"Inside My Trust Manager.");
-    		selfTrustManager.checkServerTrusted( certificates, authType );
-    }
-
-    /**
-     * @see javax.net.ssl.X509TrustManager#getAcceptedIssuers()
-     */
-    public X509Certificate[] getAcceptedIssuers(){
-    	return null;
-    }
-
-}
 	
 	/*****************
 	 * TrustManager implementation 
