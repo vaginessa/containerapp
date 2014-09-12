@@ -406,40 +406,46 @@ public class ContainerMain extends Activity {
     			if(!checkHTTPSConnection(currentURL, view))
     				return false;
     		}
-	    	//If pinned to the second level domain, i.e. the origin.
-	    	if(matchOrigin)
-	    	{ 
-		    	//Compare the second level domain ("bestbuy.com" from www-ssl.bestbuy.com)
-		    	String arrayOrig[] = (origURL.getHost()+"").split("\\.");
-		    	String arrayCurrent[] = (currentURL.getHost()+"").split("\\.");
-		    	Log.d(TAG,arrayOrig+ " | "+arrayCurrent);
-		    	int lenOrig = arrayOrig.length, lenCurr = arrayCurrent.length;
-		    	int origIndex=0, currIndex=0;
-		    	if(arrayOrig[lenOrig-1].length()<=2 && arrayOrig[lenOrig-2].length()<=2)
-		    		origIndex=3;//i.e. third from the end
-		    	else origIndex=2;//i.e. 2nd from the end
-		    	if(arrayCurrent[lenCurr-1].length()<=2 && arrayCurrent[lenCurr-2].length()<=2)
-		    		currIndex=3;
-		    	else currIndex=2;
-	 
-		    	String origDomainToMatch="", currDomainToMatch="";
-		    	while(origIndex>0){
-		    		//System.out.println("Matching:"+origIndex+": "+origDomainToMatch);
-		    		origDomainToMatch+=arrayOrig[lenOrig-origIndex];
-		    		origIndex--;
+    		try{
+		    	//If pinned to the second level domain, i.e. the origin.
+		    	if(matchOrigin)
+		    	{ 
+			    	//Compare the second level domain ("bestbuy.com" from www-ssl.bestbuy.com)
+			    	String arrayOrig[] = (origURL.getHost()+"").split("\\.");
+			    	String arrayCurrent[] = (currentURL.getHost()+"").split("\\.");
+			    	Log.d(TAG,arrayOrig+ " | "+arrayCurrent);
+			    	int lenOrig = arrayOrig.length, lenCurr = arrayCurrent.length;
+			    	int origIndex=0, currIndex=0;
+			    	if(arrayOrig[lenOrig-1].length()<=2 && arrayOrig[lenOrig-2].length()<=2)
+			    		origIndex=3;//i.e. third from the end
+			    	else origIndex=2;//i.e. 2nd from the end
+			    	if(arrayCurrent[lenCurr-1].length()<=2 && arrayCurrent[lenCurr-2].length()<=2)
+			    		currIndex=3;
+			    	else currIndex=2;
+		 
+			    	String origDomainToMatch="", currDomainToMatch="";
+			    	while(origIndex>0){
+			    		//System.out.println("Matching:"+origIndex+": "+origDomainToMatch);
+			    		origDomainToMatch+=arrayOrig[lenOrig-origIndex];
+			    		origIndex--;
+			    	}
+			    	while(currIndex>0){
+			    		//System.out.println("Matching:"+currIndex+":"+currDomainToMatch);
+			    		currDomainToMatch+=arrayCurrent[lenCurr-currIndex];
+			    		currIndex--;
+			    	}
+		    		if(origDomainToMatch.equals(currDomainToMatch)){
+		    			Log.d(TAG,"Matched "+origDomainToMatch);
+		    			//checkHTTPSConnection returns true when certificate DOES NOT match, 
+		    			//we return false to indicate loading in the webview app.
+		    			if(!checkHTTPSConnection(currentURL, view))
+		    				return false;
+		    		}
 		    	}
-		    	while(currIndex>0){
-		    		//System.out.println("Matching:"+currIndex+":"+currDomainToMatch);
-		    		currDomainToMatch+=arrayCurrent[lenCurr-currIndex];
-		    		currIndex--;
-		    	}
-	    		if(origDomainToMatch.equals(currDomainToMatch)){
-	    			Log.d(TAG,"Matched "+origDomainToMatch);
-	    			//checkHTTPSConnection returns true when certificate DOES NOT match, 
-	    			//we return false to indicate loading in the webview app.
-	    			if(!checkHTTPSConnection(currentURL, view))
-	    				return false;
-	    		}
+    		}
+	    	catch(Exception e){
+	    		Log.d(TAG, "Origin check exception:", e);
+	    		e.printStackTrace();
 	    	}
 	        // Otherwise, the link is not for a page on my site, so launch another Activity that handles URLs
 	    	showToast("Mismatched URL:"+url);
