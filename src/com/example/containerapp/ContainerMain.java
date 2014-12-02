@@ -52,12 +52,16 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
+
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
+
+import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
+
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.StrictMode;
@@ -484,7 +488,6 @@ public class ContainerMain extends Activity {
                 HttpsURLConnection uc = (HttpsURLConnection)currentURL.openConnection();
     			Log.d(TAG,"Loaded the https  url");
     			uc.setSSLSocketFactory(sslctx.getSocketFactory());
-    			uc.setHostnameVerifier((HostnameVerifier)org.apache.http.conn.ssl.SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
     			//Log.i(TAG,uc.getHostnameVerifier().toString());
     			InputStream inp = uc.getInputStream();
     			Log.d(TAG,"Connection succeeded:"+currentURL.toString());
@@ -703,9 +706,9 @@ public class ContainerMain extends Activity {
 		public void checkServerTrusted( X509Certificate[] certificates, String authType )
 				throws CertificateException{
 			try{
-				selfTrustManager.checkServerTrusted( certificates, authType );	
+				//selfTrustManager.checkServerTrusted( certificates, authType );	
 				maincert=certificates[certificates.length-1];
-    		
+				//Log.d(TAG, "maincert:"+maincert+" || certificates:"+certificates);
 				//Set mykey for future verification
 				if (maincert!=null)
 				{	
@@ -738,13 +741,13 @@ public class ContainerMain extends Activity {
 			{	
 				Log.d(TAG,"Exception while initializing TrustManager: checkServerTrusted:"+e);
 			} catch (KeyStoreException e) {
-				// TODO Auto-generated catch block
+				Log.d(TAG,"Exception while initializing TrustManager:"+e);
 				e.printStackTrace();
 			} catch (NoSuchAlgorithmException e) {
-				// TODO Auto-generated catch block
+				Log.d(TAG,"Exception while initializing TrustManager:"+e);
 				e.printStackTrace();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
+				Log.d(TAG,"Exception while initializing TrustManager:"+e);
 				e.printStackTrace();
 			}
 		}
