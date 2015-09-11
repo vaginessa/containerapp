@@ -44,6 +44,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -104,7 +105,7 @@ public class ContainerMain extends Activity {
 	boolean rulePresent=false;
 	static String fromRule=null;
 	static String toRule=null;
-	static String TAG=""; 
+	static String TAG="ContainerApp"; 
 	ArrayList<String> whiteList = new ArrayList<String>();
 
 	private final static int FILECHOOSER_RESULTCODE=1;
@@ -166,6 +167,8 @@ public class ContainerMain extends Activity {
 			{
 				Log.d(TAG,"Pinning to URL "+fixedURL+ " from assets!");
 			}
+			//TODO: Remove: for debug only
+			fixedURL = "https://m.facebook.com";
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -407,8 +410,11 @@ public class ContainerMain extends Activity {
 
     		//Check entire host first; to prevent additional overhead of obtaining the origin domain and matching it.	
     		if (origURL.getHost().equals(currentURL.getHost())) {
-    			if(!checkHTTPSConnection(currentURL, view))
+    			Log.d(TAG,"Matched without origin comparison: "+currentURL);
+    			if(!checkHTTPSConnection(currentURL, view)){
+    				Log.d(TAG, "HTTPS Connection passed for "+currentURL+" orig="+origURL);
     				return false;
+    			}
     		}
     		try{
 		    	//If pinned to the second level domain, i.e. the origin.
@@ -443,6 +449,7 @@ public class ContainerMain extends Activity {
 		    			//checkHTTPSConnection returns true when certificate DOES NOT match, 
 		    			//we return false to indicate loading in the webview app.
 		    			if(!checkHTTPSConnection(currentURL, view))
+		    				Log.d(TAG, "HTTPS Connection passed for "+currentURL+" orig="+origURL);
 		    				return false;
 		    		}
 		    	}
@@ -497,10 +504,36 @@ public class ContainerMain extends Activity {
     				inp.close();
     			uc.disconnect();
 				
-			} catch (Exception e) {
+			} catch (IOException e) {
+				//Nothing wrong with the SSL check
+				retFlag=false; 
+				Log.d(TAG,"Other exception."+e);
+			} catch (NoSuchAlgorithmException e) {
 				// TODO Auto-generated catch block
-				retFlag=true;//If SSL check failsm return true. 
-				Log.d(TAG,"Could Not make an SSL Connection"+e);
+				//e.printStackTrace();
+				retFlag=false; 
+				Log.d(TAG,"Other exception."+e);
+			} catch (KeyManagementException e) {
+				// TODO Auto-generated catch block
+				//e.printStackTrace();
+				retFlag=false; 
+				Log.d(TAG,"Other exception."+e);
+			} catch (KeyStoreException e) {
+				// TODO Auto-generated catch block
+				//e.printStackTrace();
+				retFlag=false; 
+				Log.d(TAG,"Other exception."+e);
+			}
+			catch (Exception e) {
+				CertificateException c=new CertificateException();
+				if(e.getClass().equals(c.getClass())){
+					// TODO Auto-generated catch block
+					retFlag=true;//If SSL check fails return true. 
+					Log.d(TAG,"Could Not make an SSL Connection"+e);
+				} else {
+					retFlag=false; 
+					Log.d(TAG,"Other exception."+e);
+				}	
 			}
 		}
 		
@@ -649,8 +682,15 @@ public class ContainerMain extends Activity {
 	     */
 	    public void checkServerTrusted( X509Certificate[] certificates, String authType )
 	        throws CertificateException {
-	    		Log.d(TAG,"Inside My Trust Manager.");
-	    		selfTrustManager.checkServerTrusted( certificates, authType );
+	    		Log.d(TAG,"Checking Root CA cert for "+certificates);
+	    		try{
+	    			selfTrustManager.checkServerTrusted( certificates, authType );
+	    		}
+	    		catch(CertificateException e){
+	    			Log.d(TAG,"Check failed for "+certificates);
+	    			throw e;	    			
+	    		}
+	    		Log.d(TAG,"Check passed for "+certificates);
 	    }
 
 	    /**
@@ -709,6 +749,9 @@ public class ContainerMain extends Activity {
 				//selfTrustManager.checkServerTrusted( certificates, authType );	
 				maincert=certificates[certificates.length-1];
 				//Log.d(TAG, "maincert:"+maincert+" || certificates:"+certificates);
+				Log.d(TAG, "Our guess certificates:"+certificates[0]);
+				Log.d(TAG, "Currently is maincert:"+certificates[certificates.length-1]);
+				
 				//Set mykey for future verification
 				if (maincert!=null)
 				{	
