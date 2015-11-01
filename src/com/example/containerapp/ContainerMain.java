@@ -63,7 +63,10 @@ import javax.net.ssl.X509TrustManager;
 
 import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
 
+import android.annotation.TargetApi;
+import android.app.ActionBar;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.app.Activity;
@@ -96,6 +99,7 @@ public class ContainerMain extends Activity {
 	
 	MyWebChromeClient mWebChromeClient = new MyWebChromeClient();
 	static String fixedURL;
+	static boolean isFullScreen = false;
 	WebView mywebview;
 	X509Certificate maincert=null;
 	Context context=null;
@@ -150,8 +154,13 @@ public class ContainerMain extends Activity {
 				matchOrigin=false;
 			else
 				matchOrigin=true;
+			if(stringArray.length >2 && stringArray[2].equalsIgnoreCase("true")){
+				isFullScreen = true;
+			}
+
+			Log.d(TAG, "isFullScreen : " + isFullScreen + "  version : " + Build.VERSION.SDK_INT);
 			//For ForceHTTPS, check if fromRule and toRule were packaged with this app
-			if(stringArray.length>2){
+			if(stringArray.length>3){
 				fromRule = stringArray[2];
 				toRule = stringArray[3];
 				if(fromRule!=null && toRule!=null && !fromRule.equals("") && !toRule.equals(""))
@@ -165,18 +174,53 @@ public class ContainerMain extends Activity {
 			}
 			else 
 			{
-				Log.d(TAG,"Pinning to URL "+fixedURL+ " from assets!");
+				Log.d(TAG, "Pinning to URL " + fixedURL + " from assets!");
 			}
 			//TODO: Remove: for debug only
-			fixedURL = "https://m.facebook.com";
+			//fixedURL = "https://m.facebook.com";
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			Log.d(TAG,"Exception while recovering url from xml asset");
 			e.printStackTrace();
 		}
-		
-		
+
+		View decorView = getWindow().getDecorView();
+
+		if(isFullScreen && Build.VERSION.SDK_INT > 10){
+			decorView.setSystemUiVisibility(
+					View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+							| View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+							| View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+							| View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+							| View.SYSTEM_UI_FLAG_FULLSCREEN
+							| View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+							| View.INVISIBLE);
+
+			getWindow().getDecorView().setOnSystemUiVisibilityChangeListener
+					(new View.OnSystemUiVisibilityChangeListener() {
+						@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+						@Override
+						public void onSystemUiVisibilityChange(int visibility) {
+							// Note that system bars will only be "visible" if none of the
+							// LOW_PROFILE, HIDE_NAVIGATION, or FULLSCREEN flags are set.
+							ActionBar actionBar = getActionBar();
+							if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
+								// show actionbar and statusbar
+								int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
+								decorView.setSystemUiVisibility(uiOptions);
+								actionBar.show();
+							} else {
+								// hide actionbar and statusbar
+								int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
+								decorView.setSystemUiVisibility(uiOptions);
+								actionBar.hide();
+							}
+						}
+					});
+		}
+
+
 		/* Root CA Certificate Pinning:
 		 * Get the initial Root CA Cert and pin to it.
 		 * If https, then first get the server's certificate
@@ -313,7 +357,22 @@ public class ContainerMain extends Activity {
 	    
 		//Enabling Cookies
 		 CookieManager cookieManager = CookieManager.getInstance(); 
-	     cookieManager.setAcceptCookie(true); 	
+	     cookieManager.setAcceptCookie(true);
+
+	}
+
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	@Override
+	public void onWindowFocusChanged(boolean hasFocus) {
+		super.onWindowFocusChanged(hasFocus);
+		if (hasFocus) {
+			getWindow().getDecorView().setSystemUiVisibility(
+					View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+							| View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+							| View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+							| View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+							| View.SYSTEM_UI_FLAG_FULLSCREEN
+							| View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);}
 	}
 	
 	@Override
