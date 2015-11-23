@@ -17,7 +17,9 @@
         >
         <activity
             android:name="com.example.containerapp.ContainerMain"
-            android:label="ContainerApp" >
+            android:label="ContainerApp"
+            android:configChanges="orientation|screenSize"
+            >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
